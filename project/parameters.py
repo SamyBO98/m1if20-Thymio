@@ -1,19 +1,26 @@
+# coding: utf8
 #!/usr/bin/python
 class Parameters:
 
-    ##################################################################################
-    #######################   EXPLANATIONS ABOUT THIS CLASS    #######################
-
-    """
-        Les parametres vont contenir plusieurs choses.
-        -> Plage de niveau de gris: pour que le robot se repere au sol
-        -> Vitesse du robot: constante.
-    """
+    '''
+    Classe représentant les paramètres suivants:
+    -> vitesse des moteurs des roues
+    -> valeurs extremes du niveau de gris: valeur du blanc, valeur du noir
+    '''
 
     ##################################################################################
     #######################         CLASS CONSTRUCTOR          #######################
 
     def __init__(self, speed, rangeWhite, rangeBlack):
+        '''
+        @summary: Création des paramètres
+        @param speed: Vitesse des moteurs des roues
+        @type speed: int
+        @param rangeWhite: Valeur de la couleur blanche
+        @type rangeWhite: int
+        @param rangeBlack: Valeur de la couleur noire
+        @type rangeBlack: int
+        '''
         self.speed = speed
         self.rangeWhite = rangeWhite
         self.rangeBlack = rangeBlack
@@ -49,6 +56,9 @@ class Parameters:
     #######################       CLASS STRING FOR DEBUG       #######################
 
     def toString(self):
+        '''
+        @summary: Affichage des informations de la classe (vitesse des moteurs des roues, valeurs extremes du niveau de gris)
+        '''
         return "Parameters > Robot speed:", self.speed, "- Range Level[W | B]:", self.rangeWhite, "|", self.rangeBlack
 
 

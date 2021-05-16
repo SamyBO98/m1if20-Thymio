@@ -1,3 +1,4 @@
+# coding: utf8
 #!/usr/bin/python
 ################################################################
 ####################     IMPORT CLASSES     ####################
@@ -73,7 +74,7 @@ def startSimulation(parameters, movement, network):
     print("Start the simulation...")
 
     robot = Robot.Robot(parameters, movement, network, resetTimer)
-    robot.startSimulation()
+    robot.initialiseRangeAndCenter()
 
     print("Simulation done, END...")
 

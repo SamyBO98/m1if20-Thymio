@@ -1,3 +1,4 @@
+# coding: utf8
 #!/usr/bin/python
 import gobject
 import movement as Movement
@@ -8,17 +9,25 @@ import time
 
 class Robot:
 
-    ##################################################################################
-    #######################   EXPLANATIONS ABOUT THIS CLASS    #######################
-
     """
-
+        Classe principale du robot: permet le déplacement du robot
     """
 
     ##################################################################################
     #######################         CLASS CONSTRUCTOR          #######################
 
     def __init__(self, parameters, movement, network, resetTimer):
+        '''
+        @summary: Création d'un neurone
+        @param parameters: Paramètres du robot
+        @type parameters: Parameters Class
+        @param movement: Situation actuelle
+        @type movement: Movement Class
+        @param network: Robot dbus
+        @type network: dbus Class
+        @param resetTimer: timer pour boucler l'appel des fonctions
+        @type resetTimer: int
+        '''
         self.parameters = parameters
         self.movement = movement
         self.network = network
@@ -26,7 +35,10 @@ class Robot:
         self.position = Position.Position.MIDDLE
         self.extreme = 0
         self.rangeRoadValues = []
-        self.rangeRoadIndex = 0
+        self.rangeRoadBlack = None
+        self.rangeRoadWhite = None
+        self.center = None
+        self.globalIndex = 0
 
     ##################################################################################
     #######################              GETTERS               #######################
@@ -47,23 +59,17 @@ class Robot:
     ##################################################################################
     #######################             FUNCTIONS              #######################
 
-    """
-        Remet a 0 le robot: vitesse de daplacement
-    """
     def resetRobot(self):
+        '''
+        @summary: Stoppe la vitesse des moteurs des roues
+        '''
         self.network.SetVariable("thymio-II", "motor.right.target", [0])
         self.network.SetVariable("thymio-II", "motor.left.target", [0])
 
-    """
-        Permet de faire interagir le robot: fonction principale => permet de boucler l'appel aux fonctions pour le deplacement du robot
-    """
     def startSimulation(self):
-        """
-            Le robot commence a se trouver une range.
-            On sait que la couleur blanche reste autour des 1000, mais il faut determiner la valeur la plus basse (couleur noire) pour que le robot reste le plus possible sur la route
-            Donc il ne doit pas etre decale a droite ou a gauche ce qui risque de provoquer des accidents
-        """
-        
+        '''
+        @summary: Lance la simulation en faisant bouger le robot
+        '''
         # Call move
         moveLoop = gobject.MainLoop()
         handle = gobject.timeout_add(1000, self.madeDecision)
@@ -72,49 +78,88 @@ class Robot:
         except KeyboardInterrupt:
             self.resetRobot()
             moveLoop.quit()
+
+    def initialiseRangeAndCenter(self):
         '''
+        @summary: Met les valeurs des ranges mais aussi celui du centre pour permettre au robot de se déplacer le plus précisemment possible
+        '''
+        print("===================== STARTING THE INITIALIZATION =====================")
+        print("========= GET THE RANGE OF THE BLACK COLOR")
+
         autoRoadRangeDetectionLoop = gobject.MainLoop()
-        handle = gobject.timeout_add(10, self.autoRoadRangeDetection, self.parameters.getSpeed() / 10, autoRoadRangeDetectionLoop)
+        handle = gobject.timeout_add(self.resetTimer / 10, self.autoRoadRangeDetection, self.parameters.getSpeed() / 10, autoRoadRangeDetectionLoop)
 
         try:
             autoRoadRangeDetectionLoop.run()
         except KeyboardInterrupt:
             self.resetRobot()
             autoRoadRangeDetectionLoop.quit()
-        '''
+
         
 
-    def autoRoadRangeDetection(self, motorRight, autoRoadRangeDetectionLoop):
+    def autoRoadRangeDetection(self, motorRight, loop):
+        '''
+        @summary: Met les valeurs des ranges mais aussi celui du centre pour permettre au robot de se déplacer le plus précisemment possible
+        @param motorRight: Vitesse du moteur de la roue droite
+        @type motorRight: int
+        @param loop: Boucle de la fonction
+        @type loop: Gobject Loop
+        '''
         deltaR = self.network.GetVariable("thymio-II", "prox.ground.delta")[1]
+
         if self.rangeRoadValues != [] and deltaR > 1.15 * min(self.rangeRoadValues):
             # Cas ou le robot est sur la partie gauche de la route: on a trouve la valeur noire la plus basse
-            print("DETECTION STOP: [", deltaR, ">", self.parameters.getRangeBlack(), "] => min is", min(self.rangeRoadValues))
-            self.rangeRoadIndex = self.rangeRoadValues.index(min(self.rangeRoadValues))
-            self.parameters.setRangeBlack(min(self.rangeRoadValues))
             self.network.SetVariable("thymio-II", "motor.right.target", [0])
-            time.sleep(5)
-            autoRoadRangeDetectionLoop.quit()
+            print("DETECTION STOP: [", deltaR, ">", self.parameters.getRangeBlack(), "] => min is", min(self.rangeRoadValues))
+            # on récupère l'index du robot de la marge blanche et la marge noire pour trouver le centre de la route
+            self.rangeRoadBlack = self.rangeRoadValues.index(min(self.rangeRoadValues))
+            whiteValue = 0.9 * self.rangeRoadValues[0]
 
-            # Call autoRoadRangeDetectionReplacement
-            autoRoadRangeDetectionReplacementLoop = gobject.MainLoop()
-            handle = gobject.timeout_add(10, self.autoRoadRangeDetectionReplacement, motorRight, autoRoadRangeDetectionReplacementLoop)
+            for i in range(len(self.rangeRoadValues)):
+                if self.rangeRoadValues[i] <= whiteValue:
+                    self.rangeRoadWhite = i
+                    break
+
+            self.parameters.setRangeWhite(self.rangeRoadValues[self.rangeRoadWhite])
+            self.parameters.setRangeBlack(self.rangeRoadValues[self.rangeRoadBlack])
+
+            print("INDEX BLACK:", self.rangeRoadBlack)
+            print("INDEX WHITE:", self.rangeRoadWhite)
+            if abs(self.rangeRoadBlack - self.rangeRoadWhite) % 2 == 0:
+                self.center = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite)]
+            else:
+                x1 = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 1]
+                x2 = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 2]
+
+                x = abs(x1 + x2) / 2
+                self.center = x 
+
+            print("Center:", self.center)
+
+            time.sleep(3)
+            loop.quit()
+
+            # Call robotPlacement
+            robotPlacementLoop = gobject.MainLoop()
+            handle = gobject.timeout_add(10, self.robotPlacement, motorRight, robotPlacementLoop)
             try:
-                autoRoadRangeDetectionReplacementLoop.run()
+                robotPlacementLoop.run()
             except KeyboardInterrupt:
                 self.resetRobot()
-                autoRoadRangeDetectionReplacementLoop.quit()
+                robotPlacementLoop.quit()
         else:
             # Cas ou le robot continue sa detection
-            print("DETECTION CONTINUE: [", deltaR, "<=", self.parameters.getRangeBlack(), "]")
+            print("DETECTION CONTINUE: [", deltaR, "<=", self.parameters.getRangeBlack(), "] =>", self.globalIndex)
+            self.globalIndex = self.globalIndex + 1
             self.rangeRoadValues.append(deltaR)
             self.network.SetVariable("thymio-II", "motor.right.target", [motorRight])
 
         return True
 
     def autoRoadRangeDetectionReplacement(self, motorRight, autoRoadRangeDetectionReplacementLoop):
-        if self.rangeRoadIndex < len(self.rangeRoadValues):
+        if self.rangeRoadBlack < len(self.rangeRoadValues):
             print("DETECTION REPLACEMENT IN PROCESS...")
-            self.rangeRoadIndex = self.rangeRoadIndex + 1
+            self.rangeRoadBlack = self.rangeRoadBlack + 1
             self.network.SetVariable("thymio-II", "motor.right.target", [-motorRight])
         else:
             print("DETECTION REPLACEMENT DONE!")
@@ -135,17 +180,18 @@ class Robot:
             
 
         
-    def robotPlacement(self, motorRight, robotPlacementLoop):
+    def robotPlacement(self, motorRight, loop):
         deltaR = self.network.GetVariable("thymio-II", "prox.ground.delta")[1]
-        placementRange = 0.6 * (self.parameters.getRangeWhite() - self.parameters.getRangeBlack())
-        if deltaR > placementRange:
+        #placementRange = 0.6 * (self.parameters.getRangeWhite() - self.parameters.getRangeBlack())
+
+        if deltaR > 1.15 * self.center:
             # Le placement est bon
-            print("ROBOT PLACEMENT STOP: [", deltaR, ">", placementRange, "]")
+            print("ROBOT PLACEMENT STOP: [", deltaR, ">", 1.15 * self.center, "]")
             self.network.SetVariable("thymio-II", "motor.right.target", [0])
             # Pour faire en sorte que le robot soit encore mieux place, on augmente legerement la range de la couleur noire
-            self.parameters.setRangeBlack(self.parameters.getRangeBlack() * 1.65)
-            time.sleep(5)
-            robotPlacementLoop.quit()
+            #self.parameters.setRangeBlack(self.parameters.getRangeBlack() * 1.65)
+            time.sleep(3)
+            loop.quit()
 
             # Call move
             moveLoop = gobject.MainLoop()
@@ -157,8 +203,8 @@ class Robot:
                 moveLoop.quit()
         else:
             # On continue de le faire bouger
-            print("ROBOT PLACEMENT CONTINUE: [", deltaR, "<=", placementRange, "]")
-            self.network.SetVariable("thymio-II", "motor.right.target", - [motorRight])
+            print("ROBOT PLACEMENT CONTINUE: [", deltaR, "<=", 1.15 * self.center, "]")
+            self.network.SetVariable("thymio-II", "motor.right.target", [-motorRight])
         return True
         
     def move(self, motorLeft, motorRight):
