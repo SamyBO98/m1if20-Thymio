@@ -12,10 +12,10 @@ from project import movement as Movement
 from project import parameters as Parameters
 from project import robot as Robot
 # global variables
-speed = 500
-rangeBlack = 300
-rangeWhite = 500
-resetTimer = 10
+speed = 75
+rangeBlack = 350
+rangeWhite = 700
+resetTimer = 100
 
 ################################################################
 ######################     MAIN CLASS     ######################
@@ -61,7 +61,7 @@ def initParameters():
 """
 def initMovement():
     print("InitMovement function starting...")
-    movement = Movement.Movement.LEFT
+    movement = Movement.Movement.STRAIGHT
     print("Movement > Current movement:", movement)
     print("InitMovement function done, NEXT...")
     return movement
@@ -76,11 +76,6 @@ def startSimulation(parameters, movement, network):
     robot.startSimulation()
 
     print("Simulation done, END...")
-
-def madeDecision(network):
-    sensorR = network.GetVariable("thymio-II", "prox.ground.delta")[1]
-    sensorL = network.GetVariable("thymio-II", "prox.ground.delta")[0]
-    print("Debug > Sensors [L | R]:", sensorL, "|", sensorR)
 
 
 """

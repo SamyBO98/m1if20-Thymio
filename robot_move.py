@@ -1,6 +1,6 @@
 import dbus
 import dbus.mainloop.glib
-import gobject
+from gi.repository import GObject as gobject
 from optparse import OptionParser
 from pynput import keyboard as kb
 
@@ -37,11 +37,11 @@ def move_linear():
 
     #print(delta)
 
-    if delta < detectMin:
+    if deltaR < detectMin:
         print("too much on right")
         network.SetVariable("thymio-II", "motor.right.target", [speed])
         network.SetVariable("thymio-II", "motor.left.target", [lowSpeed])
-    elif delta > detectMax:
+    elif deltaR > detectMax:
         print("too much on left")
         network.SetVariable("thymio-II", "motor.right.target", [lowSpeed])
         network.SetVariable("thymio-II", "motor.left.target", [speed])
@@ -143,16 +143,16 @@ if __name__ == '__main__':
     #print network.GetNodesList()
  
     #GObject loop
-    print 'starting loop'
+    print("starting loop")
     loop = gobject.MainLoop()
     network.SetVariable("thymio-II", "motor.right.target", [0])
     network.SetVariable("thymio-II", "motor.left.target", [0])
     # Functions called every 0.1 seconds
-    #handle = gobject.timeout_add(100, move_linear)
+    handle = gobject.timeout_add(100, move_linear)
     #handle = gobject.timeout_add(100, move_left, 140, 115)
     #handle = gobject.timeout_add(100, move_right, 140, 115)
 
 
     # DEBUG
-    handle = gobject.timeout_add(1000, debug)
+    #handle = gobject.timeout_add(1000, debug)
     loop.run()
