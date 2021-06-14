@@ -6,7 +6,6 @@
 # robot
 import dbus
 import dbus.mainloop.glib
-import gobject
 from optparse import OptionParser
 # local classes
 from project import movement as Movement

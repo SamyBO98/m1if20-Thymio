@@ -1,9 +1,10 @@
 # coding: utf8
 #!/usr/bin/python
-import gobject
-import movement as Movement
-import parameters as Parameters
-import position as Position
+#import gobject
+from gi.repository import GObject as gobject
+from . import movement as Movement
+from . import parameters as Parameters
+from . import position as Position
 import time
 
 
@@ -128,8 +129,8 @@ class Robot:
             if abs(self.rangeRoadBlack - self.rangeRoadWhite) % 2 == 0:
                 self.center = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite)]
             else:
-                x1 = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 1]
-                x2 = self.rangeRoadValues[abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 2]
+                x1 = self.rangeRoadValues[int(abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 1)]
+                x2 = self.rangeRoadValues[int(abs(self.rangeRoadBlack - self.rangeRoadWhite) / 2 + 2)]
 
                 x = abs(x1 + x2) / 2
                 self.center = x 
@@ -210,21 +211,20 @@ class Robot:
     def move(self, motorLeft, motorRight):
         deltaL = self.network.GetVariable("thymio-II", "prox.ground.delta")[0]
         deltaR = self.network.GetVariable("thymio-II", "prox.ground.delta")[1]
-        center = 350
 
         speedR = motorRight
         speedL = motorLeft
         
-        if deltaR > center:
-            print("Robot is on the right:", deltaR, ">", center)
-            speedR = motorRight + (1.5 * abs(deltaR - center)) / 100
+        if deltaR > self.center:
+            print("Robot is on the right:", deltaR, ">", self.center)
+            speedR = motorRight + (1.5 * abs(deltaR - self.center)) / 100
             speedL = 0.8 * motorLeft
-        elif deltaR < center:
-            print("Robot is on the left", deltaR, "<", center)
+        elif deltaR < self.center:
+            print("Robot is on the left", deltaR, "<", self.center)
             speedR = 0.8 * motorRight
-            speedL = motorLeft + (1.5 * abs(deltaR - center)) / 100
+            speedL = motorLeft + (1.5 * abs(deltaR - self.center)) / 100
         else:
-            print("Robot is perfectly placed in the middle", deltaR, "=", center)
+            print("Robot is perfectly placed in the middle", deltaR, "=", self.center)
             speedR = motorRight
             speedL = motorLeft
         
