@@ -11,6 +11,7 @@ from optparse import OptionParser
 from project import movement as Movement
 from project import parameters as Parameters
 from project import robot as Robot
+from threading import Thread
 # global variables
 speed = 75
 rangeBlack = 350
@@ -73,7 +74,9 @@ def startSimulation(parameters, movement, network):
     print("Start the simulation...")
 
     robot = Robot.Robot(parameters, movement, network, resetTimer)
-    robot.initialiseRangeAndCenter()
+    f1 = Thread(target=robot.initialiseRangeAndCenter)
+    f1.start()
+    
 
     print("Simulation done, END...")
 

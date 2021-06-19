@@ -224,8 +224,7 @@ class Robot:
             
 
             # Call move
-            moveLoop = gobject.MainLoop()
-            handle = gobject.timeout_add(1000, self.madeDecision)
+            self.test()
             try:
                 moveLoop.run()
             except KeyboardInterrupt:
@@ -434,30 +433,14 @@ class Robot:
             colors = ["empty", "empty", "empty", "empty"]
         #print(colors)    
         if colors[0] != "empty" and colors[1] != "empty" and colors[2] != "empty" and colors[3] != "empty":
+            if colors == ["white", "white", "white", "white"]:
+                self.movement = Movement.Movement.STRAIGHT
+            elif colors == ["red", "red", "white", "white"]:
+                self.movement = Movement.Movement.LEFT
+            elif colors == ["red", "blue", "red", "white"]:
+                self.movement = Movement.Movement.RIGHT
             print(colors) 
-            
-    def test(self):
-        while(1):
-            _, img = webcam.read()
-            imgContour = img.copy()
-            imgBlur = cv2.GaussianBlur(img, (7,7), 1)
-            imgGray = cv2.cvtColor(imgBlur, cv2.COLOR_BGR2GRAY)
-            kernel = np.ones((5,5))
-            t1 = cv2.getTrackbarPos("L - H", "Trackbars")
-            t2 = cv2.getTrackbarPos("U - V", "Trackbars")
-            
-            imgCanny = cv2.Canny(imgGray, t1, t2)
-            imgDil = cv2.dilate(imgCanny, kernel, iterations=1)
-            
-            self.getContours(imgDil,imgContour)
 
-        # Program Termination
-            cv2.imshow("Multiple Color Detection in Real-TIme", imgContour)
-            
-    
-            if cv2.waitKey(10) & 0xFF == ord('q'):
-                cv2.destroyAllWindows()
-                break
 
     """
         Fonction qui permet au robot de s'adapter selon la situation
@@ -497,8 +480,34 @@ class Robot:
         elif self.movement == Movement.Movement.DEBUG:
             # MODE DEBUG
             self.debug()
-        self.test()
         return True
+    
+    
+                
+    def test(self):
+        while(1):
+            self.madeDecision()
+            _, img = webcam.read()
+            imgContour = img.copy()
+            imgBlur = cv2.GaussianBlur(img, (7,7), 1)
+            imgGray = cv2.cvtColor(imgBlur, cv2.COLOR_BGR2GRAY)
+            kernel = np.ones((5,5))
+            t1 = cv2.getTrackbarPos("L - H", "Trackbars")
+            t2 = cv2.getTrackbarPos("U - V", "Trackbars")
+            
+            imgCanny = cv2.Canny(imgGray, t1, t2)
+            imgDil = cv2.dilate(imgCanny, kernel, iterations=1)
+            
+            self.getContours(imgDil,imgContour)
+
+        # Program Termination
+            cv2.imshow("Multiple Color Detection in Real-TIme", imgContour)
+            
+    
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                break
+    
 
     """
         Debug: affichage des informations du robot
