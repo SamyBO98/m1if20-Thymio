@@ -42,23 +42,22 @@ while(True):
 
     # 1. Grey scale
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #cv2.imshow("Escala de Grises sin filtro",gray)
+    #cv2.imshow("Grayscale without filter",gray)
     gray = cv2.GaussianBlur(gray, (3,3), 0)
-    #cv2.imshow("Escala de Grises",gray)
+    #cv2.imshow("Grayscale",gray)
 
     # 2. Border Detection
     edged = cv2.Canny(gray, 50, 150)
     #cv2.imshow("Edged",edged)
 
-    #3.Operaciones Morfologicas Cierre
+    #3.Simplify image
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
     closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel, iterations = 2)
     #cv2.imshow("Closed",closed)
     
-    #4.Encontrar contornos
+    #4.Find contours
     #_,cnts,_=cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     cnts, hierarchy = cv2.findContours(closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    #print "contornos",len(cnts)
     
     '''
     total = 0
@@ -67,17 +66,17 @@ while(True):
         #print "area",area
 
         if area > 1700:
-            #aproximacion de contorno
-            peri = cv2.arcLength(c, True) #Perimetro
+            #contour aprox
+            peri = cv2.arcLength(c, True) #Perimeter
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            #Si la aproximacion tiene 4 vertices correspondera a un rectangulo (Libro)
+            #If the aproximation has 4 apex is a rectangle
             if len(approx) == 4:
                     cv2.drawContours(frame, [approx], -1, (0, 255, 0), 3, cv2.LINE_AA)
                     total += 1
     
-        #5.Poner texto en imagen
-        letrero = 'Objetos: ' + str(total)
-        cv2.putText(frame, letrero, (10,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0) ,2)
+    #5.Put text in image
+    letrero = 'Objects: ' + str(total)
+    cv2.putText(frame, letrero, (10,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0) ,2)
     '''
 
     
@@ -86,10 +85,10 @@ while(True):
         #print "area",area
 
         if area > 1700:
-            #aproximacion de contorno
+            #contour aprox
             peri = cv2.arcLength(c, True) #Perimetro
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            #Si la aproximacion tiene 4 vertices correspondera a un rectangulo (Libro)
+            #If the aproximation has 4 apex is a rectangle
             if len(approx) == 4:
                 cv2.drawContours(frame, cnts, -1, (0, 255, 0), 3, cv2.LINE_AA)
     
