@@ -35,15 +35,54 @@ for command in command_list:
     subprocess.Popen(shlex.split(command.format(cam_id=cam_id, cam_mode=cam_mode)))
 
 while(True):
-    ret, frame = cam.read()
+    ret, iniframe = cam.read()
+
+    frame = cv2.resize(iniframe, None, fx=1, fy=0.5)
 
     if not ret:
         break
 
-    # 1. Grey scale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    #cv2.imshow("Grayscale without filter",gray)
-    gray = cv2.GaussianBlur(gray, (3,3), 0)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+
+    
+    # Only white
+    lower_white = np.array([0,0,0])
+    upper_white = np.array([57,15,255])
+    #upper_white = np.array([172,111,255])
+    
+    '''
+    # Whitout white
+    lower_white = np.array([0,50,0])
+    #upper_white = np.array([57,15,255])
+    upp
+    er_white = np.array([360,255,255])
+    '''
+    
+    # Threshold the HSV image to get only white colors
+    mask = cv2.inRange(hsv, lower_white, upper_white)
+    # Bitwise-AND mask and original image
+    gray0 = cv2.bitwise_and(frame,frame, mask= mask)
+
+    #cv2.imshow('frame2',frame)
+    cv2.imshow('mask',mask)
+    cv2.imshow('res',gray0)
+    
+
+    # Grey filter
+    #gray0 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    #cv2.imshow("Grayscale without filter", gray0)
+
+    # 2D blur filter
+    kernel = np.ones((5,5),np.float32)/25
+    gray1 = cv2.filter2D(gray0,-1,kernel)
+    #cv2.imshow("Grayscale with 2D blur filter",gray)
+
+    # Gaussian blur filter
+    #gray = cv2.GaussianBlur(gray1, (5,5), 0)
+    #cv2.imshow("Grayscale",gray)
+
+    gray = cv2.medianBlur(gray1,15)
     #cv2.imshow("Grayscale",gray)
 
     # 2. Border Detection
@@ -58,45 +97,34 @@ while(True):
     #4.Find contours
     #_,cnts,_=cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     cnts, hierarchy = cv2.findContours(closed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Show borders
+    frame2 = frame.copy()
+    cv2.drawContours(frame2, cnts, -1, (0, 255, 0), 3, cv2.LINE_AA)
+    cv2.imshow("all edges",frame2)
     
-    '''
-    total = 0
+    # Filter borders
     for c in cnts:
         area = cv2.contourArea(c)
-        #print "area",area
-
+        
         if area > 1700:
-            #contour aprox
-            peri = cv2.arcLength(c, True) #Perimeter
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            #If the aproximation has 4 apex is a rectangle
-            if len(approx) == 4:
-                    cv2.drawContours(frame, [approx], -1, (0, 255, 0), 3, cv2.LINE_AA)
-                    total += 1
-    
-    #5.Put text in image
-    letrero = 'Objects: ' + str(total)
-    cv2.putText(frame, letrero, (10,150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0) ,2)
-    '''
+            # poligone filter
+            epsilon = 0.1*cv2.arcLength(c,True)
+            approx = cv2.approxPolyDP(c,epsilon,True)
 
-    
-    for c in cnts:
-        area = cv2.contourArea(c)
-        #print "area",area
-
-        if area > 1700:
-            #contour aprox
-            peri = cv2.arcLength(c, True) #Perimeter
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            # rectangles filter
+            #peri = cv2.arcLength(c, True) #Perimeter
+            #approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             #If the aproximation has 4 apex is a rectangle
-            if len(approx) == 4:
-                cv2.drawContours(frame, [approx], -1, (0, 255, 0), 3, cv2.LINE_AA)
-    
-    cv2.imshow('frame',frame)
-    #cv2.imshow('frame',expand_frame)
+            #if len(approx) == 4:
+
+            # show borders
+            cv2.drawContours(frame, [approx], -1, (0, 255, 0), 3, cv2.LINE_AA)
+
+
+    cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     
-
 cam.release()
 cv2.destroyAllWindows()
