@@ -86,11 +86,11 @@ while(True):
 
         if area > 1700:
             #contour aprox
-            peri = cv2.arcLength(c, True) #Perimetro
+            peri = cv2.arcLength(c, True) #Perimeter
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             #If the aproximation has 4 apex is a rectangle
             if len(approx) == 4:
-                cv2.drawContours(frame, cnts, -1, (0, 255, 0), 3, cv2.LINE_AA)
+                cv2.drawContours(frame, [approx], -1, (0, 255, 0), 3, cv2.LINE_AA)
     
     cv2.imshow('frame',frame)
     #cv2.imshow('frame',expand_frame)
